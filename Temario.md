@@ -29,3 +29,13 @@
     - Frameworks populares:
         - Flask
         - FastAPI
+        
+4. Protección de Endpoints
+    - Middleware / Dependency injection
+    - Validación de:
+        - Firma del token
+        - Expiración 
+        - Claims obligatorios
+    - Extracción del usuario desde el token
+    - Header obligatorio:
+        Authorization: Bearer <token>
