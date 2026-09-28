@@ -19,3 +19,13 @@
         - Refresh Token - Larga duración
     - Secret key v/s Public/Private key (RS256)
     - Definición de expiración exp, lat, nbf
+
+3. Autenticación Básica: Login
+    - Flujo típico: 
+        - Usuario envía credenciales
+        - API valida usuario
+        - API genera JWT
+        - API retorna el token
+    - Frameworks populares:
+        - Flask
+        - FastAPI
