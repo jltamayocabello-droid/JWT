@@ -39,3 +39,12 @@
     - Extracción del usuario desde el token
     - Header obligatorio:
         Authorization: Bearer <token>
+
+5. Manejo de Roles y Permisos
+    - JWT con roles definidos en el token:
+    admin * user * qa * otros
+    - Autorización basada en:
+        - Roles asignados
+        - Scopes de permiso
+    - Protección granular de endpoints según permisos
+    
