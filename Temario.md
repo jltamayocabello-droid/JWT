@@ -47,4 +47,11 @@
         - Roles asignados
         - Scopes de permiso
     - Protección granular de endpoints según permisos
-    
+
+6. Refresh Tokens (Clave en Producción)
+    - Diferencia:
+        . Access Token: Corta duración (15-30 min)
+        - Refresh Token: Larga duración (días/meses)
+    - Flujo de renovación de tokens
+    - Invalidación de refresh tokens
+    - Rotación de tokens para mayor seguridad
