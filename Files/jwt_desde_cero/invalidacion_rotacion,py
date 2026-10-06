@@ -1,0 +1,94 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import jwt
+from datetime import datetime, timedelta, timezone
+import uuid
+
+app = FastAPI()
+
+SECRET_KEY = "mi_clave_super_secreta"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_MINUTES = 15
+REFRESH_TOKEN_DAYS = 7
+
+resfresh_token_store = {}
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+fake_users_db = {
+    "admin": "123"
+}
+
+def create_access_token(username: str):
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": username,
+        "exp": now + timedelta(minutes=ACCESS_TOKEN_MINUTES)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def create_refresh_token(username: str) -> str:
+    token_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": username,
+        "jti": token_id,
+        "exp": now + timedelta(days=REFRESH_TOKEN_DAYS)
+    }
+
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    resfresh_token_store[token_id] = {
+        "username": username,
+        "revoked": False
+    }
+    
+    return token   
+
+
+@app.post("/login")
+async def login(request: LoginRequest):
+        if fake_users_db.get(request.username) != request.password:
+            raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+
+        access_token = create_access_token(request.username)
+        refresh_token = create_refresh_token(request.username)
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token
+        }
+
+@app.post("/refresh")
+def refresh(data: RefreshRequest):
+     try:
+        payload = jwt.decode(
+            data.refresh_token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+     except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado")
+     except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
+
+     token_id = payload.get("jti")
+     stored_token = resfresh_token_store.get(token_id)
+
+     if not stored_token or stored_token["revoked"]:
+         raise HTTPException(status_code=401, detail="Token inválido")
+
+     refresh_token_store[token_id]["revoked"] = True
+
+     new_refresh_token = create_refresh_token(stored_token["username"])
+     new_access_token = create_access_token(stored_token["username"])
+
+     return {
+         "access_token": new_access_token,
+         "refresh_token": new_refresh_token
+     }
+    
