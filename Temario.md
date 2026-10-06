@@ -55,3 +55,13 @@
     - Flujo de renovación de tokens
     - Invalidación de refresh tokens
     - Rotación de tokens para mayor seguridad
+
+7. Seguridad en JWT
+    - Errores comunes:
+        - Tokens sin expiración
+        - Secret Keys débiles
+        - Guardar tokens en localStorage
+    - Buenas prácticas:
+        - HTTPs obligatorio
+        - Expiraciones cortas
+        - Blacklist/Revocation
