@@ -11,7 +11,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_MINUTES = 15
 REFRESH_TOKEN_DAYS = 7
 
-resfresh_token_store = {}
+# Nombre corregido (sin la 's' extra)
+refresh_token_store = {}
 
 class LoginRequest(BaseModel):
     username: str
@@ -42,53 +43,53 @@ def create_refresh_token(username: str) -> str:
     }
 
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-    resfresh_token_store[token_id] = {
+    refresh_token_store[token_id] = {
         "username": username,
         "revoked": False
     }
     
     return token   
 
-
 @app.post("/login")
 async def login(request: LoginRequest):
-        if fake_users_db.get(request.username) != request.password:
-            raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    if fake_users_db.get(request.username) != request.password:
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
 
-        access_token = create_access_token(request.username)
-        refresh_token = create_refresh_token(request.username)
+    access_token = create_access_token(request.username)
+    refresh_token = create_refresh_token(request.username)
 
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token
-        }
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token
+    }
 
 @app.post("/refresh")
 def refresh(data: RefreshRequest):
-     try:
+    try:
         payload = jwt.decode(
             data.refresh_token,
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
-     except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expirado")
-     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Token inválido")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
 
-     token_id = payload.get("jti")
-     stored_token = resfresh_token_store.get(token_id)
+    token_id = payload.get("jti")
+    stored_token = refresh_token_store.get(token_id)
 
-     if not stored_token or stored_token["revoked"]:
-         raise HTTPException(status_code=401, detail="Token inválido")
+    if not stored_token or stored_token["revoked"]:
+        raise HTTPException(status_code=401, detail="Token inválido o revocado")
 
-     refresh_token_store[token_id]["revoked"] = True
+    # Revocamos el token actual (Rotación de refresh tokens)
+    refresh_token_store[token_id]["revoked"] = True
 
-     new_refresh_token = create_refresh_token(stored_token["username"])
-     new_access_token = create_access_token(stored_token["username"])
+    username = payload.get("sub")
+    new_refresh_token = create_refresh_token(username)
+    new_access_token = create_access_token(username)
 
-     return {
-         "access_token": new_access_token,
-         "refresh_token": new_refresh_token
-     }
-    
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token
+    }
